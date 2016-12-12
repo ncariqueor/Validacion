@@ -36,6 +36,12 @@ $con->query("update activo set active = 1 where active = 0");
 function actualizarValidar($con, $conexion, $dia, $semana)
 {
 
+    $inicio = array(3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000, 13000000,
+        14000000, 15000000, 16000000, 17000000, 18000000, 19000000, 20000000, 21000000, 22000000, 23000000);
+
+    $fin    = array(3595999, 4595999, 5595999, 6595999, 7595999, 8595999, 9595999, 10595999, 11595999,
+        12595999, 13595999, 14595999, 15595999, 16595999, 17595999, 18595999, 19595999, 20595999, 21595999, 22595999, 23595999);
+
     $query = "delete from validar WHERE fecorden >= $semana and fecorden <= $dia";
 
     $eliminar = $con->query($query);
@@ -71,9 +77,44 @@ function actualizarValidar($con, $conexion, $dia, $semana)
             if ($i == 14) $depto1 = odbc_result($res, $i);
         }
 
-        $res2 = $con->query("Insert into validar values($numorden, $fecorden, $horaorden, $estorden,
-                                                            $estactua, $estanter, $correl, $feccambio,
-                                                            $horcambio, $coddesp, '$usuario', '$campo2', $pxq, $depto1)");
+        $count = count($inicio);
+
+        $rango1 = 0;
+
+        $rango2 = 0;
+
+        for($i = 0; $i < $count; $i++){
+            if($horaorden >= $inicio[$i] && $horaorden <= $fin[$i]){
+                $rango1 = "" . $inicio[$i] . "";
+
+                if(strlen($rango1) == 7)
+                    $rango1 = "0" . $rango1;
+
+                $rango2 = "" . $fin[$i] . "";
+
+                if(strlen($rango2) == 7)
+                    $rango2 = "0" . $rango2;
+
+                break;
+            }
+        }
+
+        $res2 = $con->query("Insert into validar values($numorden,
+                                                        $fecorden,
+                                                        $horaorden,
+                                                        $estorden,
+                                                        $estactua,
+                                                        $estanter,
+                                                        $correl,
+                                                        $feccambio,
+                                                        $horcambio,
+                                                        $coddesp,
+                                                       '$usuario',
+                                                       '$campo2',
+                                                        $pxq,
+                                                        $depto1,
+                                                        '$rango1',
+                                                        '$rango2')");
 
         if(!$res2){
             echo "En actualizar validar " . $con->error;
