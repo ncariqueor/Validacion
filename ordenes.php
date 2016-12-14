@@ -55,11 +55,16 @@ if($tipo == 'cctivam')
 if($tipo == 'mayor')
     $nomorden = 'Mayor a 24 horas';
 
-$fecha = new DateTime($dia);
-$titulo = "Órdenes de Compra " . $nomorden . " Día " . $fecha->format("d-m-Y");
+if($tipo == 'todos'){
+    $nomorden = 'Totales';
+}
+if($tipo != 'todos')
+    $titulo = "Órdenes de Compra " . $nomorden . " Día " . date("d-m-Y", strtotime("{$dia}"));
+else
+    $titulo = "Órdenes de Compra " . $nomorden . " (pendientes de validar) Mes " . date("m-Y", strtotime("{$dia}"));
 
 $titulos1 = array('Número', 'Número de Orden', 'Fecha de Orden', 'Hora de Órden', 'Estado Órden', 'Estado Actual', 'Estado Anterior',
-                'Correlativo', 'Fecha de cambio', 'Hora de cambio', 'Código de Despacho', 'Usuario Validador', 'Usuario Venta');
+                'Correlativo', 'Fecha de cambio', 'Hora de cambio', 'Código de Despacho', 'Usuario Validador', 'Usuario Venta', 'Tipo orden');
 
 $excel->setActiveSheetIndex(0)
     ->mergeCells('A1:M1');
@@ -79,7 +84,8 @@ $excel->setActiveSheetIndex(0)
     ->setCellValue('J2', $titulos1[9])
     ->setCellValue('K2', $titulos1[10])
     ->setCellValue('L2', $titulos1[11])
-    ->setCellValue('M2', $titulos1[12]);
+    ->setCellValue('M2', $titulos1[12])
+    ->setCellValue('N2', $titulos1[13]);
 
 $activo = 0;
 $query = "select active from activo";
@@ -106,9 +112,24 @@ if($tipo == 'valautopv' || $tipo == 'pfraudepv' || $tipo == 'eordenpv' || $tipo 
                   group by numorden having count(numorden)>=1 order by feccambio desc, horcambio  desc";
 
     if($activo == 1)
-        $noIncluir = "select * from auxvalidar WHERE fecorden = $dia
+        $query = "select * from auxvalidar WHERE fecorden = $dia
                   AND ESTANTER = $estanter AND estorden not in (80, 99)
                   group by numorden having count(numorden)>=1 order by feccambio desc, horcambio  desc";
+}
+
+if($tipo == 'todos'){
+    $dia = str_split($dia);
+
+    $dia = $dia[0] . $dia[1] . $dia[2] . $dia[3] . $dia[4] . $dia[5];
+
+    $query = "select * from validar WHERE fecorden like '$dia%'
+                  AND estorden not in (80, 99) and estanter in (0, 1, 2, 34, 81)
+                  group by numorden having count(numorden)>=1 order by estanter asc";
+
+    if($activo == 1)
+        $query = "select * from auxvalidar WHERE fecorden like '$dia%'
+                  AND estorden not in (80, 99) and estanter in (0, 1, 2, 34, 81)
+                  group by numorden having count(numorden)>=1 order by estanter asc";
 }
 
 if($tipo == 'anupfraude' || $tipo == 'anueorden' || $tipo == 'anufactura' || $tipo == 'anuoffline') {
@@ -162,36 +183,50 @@ $i=3;
 $j=1;
 
 while ($row = mysqli_fetch_assoc($res)) {
+    $tipo_val = "";
+    if($row['estanter'] == 0)
+        $tipo_val = 'Error Sistemas';
+    if($row['estanter'] == 1)
+        $tipo_val = 'Posible Fraude';
+    if($row['estanter'] == 2)
+        $tipo_val = 'Error Orden';
+    if($row['estanter'] == 34)
+        $tipo_val = 'Facturas';
+    if($row['estanter'] == 81)
+        $tipo_val = 'Órdenes Offline';
+
     if($tipo != 'mayor'){
         $excel->setActiveSheetIndex(0)
             ->setCellValue('A'.$i, $j)
             ->setCellValue('B'.$i, $row['numorden'])
-            ->setCellValue('C'.$i, $row['fecorden'])
+            ->setCellValue('C'.$i, date("d-m-Y", strtotime("{$row['fecorden']}")))
             ->setCellValue('D'.$i, $row['horaorden'])
             ->setCellValue('E'.$i, $row['estorden'])
             ->setCellValue('F'.$i, $row['estactua'])
             ->setCellValue('G'.$i, $row['estanter'])
             ->setCellValue('H'.$i, $row['correl'])
-            ->setCellValue('I'.$i, $row['feccambio'])
+            ->setCellValue('I'.$i, date("d-m-Y", strtotime("{$row['feccambio']}")))
             ->setCellValue('J'.$i, $row['horcambio'])
             ->setCellValue('K'.$i, $row['coddesp'])
             ->setCellValue('L'.$i, $row['usuario'])
-            ->setCellValue('M'.$i, $row['campo2']);
+            ->setCellValue('M'.$i, $row['campo2'])
+            ->setCellValue('N'.$i, $tipo_val);
     }else{
         $excel->setActiveSheetIndex(0)
             ->setCellValue('A'.$i, $j)
             ->setCellValue('B'.$i, $row['numorden'])
-            ->setCellValue('C'.$i, $row['fecorden'])
+            ->setCellValue('C'.$i, date("d-m-Y", strtotime("{$row['fecorden']}")))
             ->setCellValue('D'.$i, $row['horaorden'])
             ->setCellValue('E'.$i, $row['estorden'])
             ->setCellValue('F'.$i, $row['estactua'])
             ->setCellValue('G'.$i, $row['estanter'])
             ->setCellValue('H'.$i, 'none')
-            ->setCellValue('I'.$i, $row['feccambio'])
+            ->setCellValue('I'.$i, date("d-m-Y", strtotime("{$row['feccambio']}")))
             ->setCellValue('J'.$i, $row['horcambio'])
             ->setCellValue('K'.$i, $row['coddesp'])
             ->setCellValue('L'.$i, $row['usuario'])
-            ->setCellValue('M'.$i, 'none');
+            ->setCellValue('M'.$i, 'none')
+            ->setCellValue('N'.$i, $tipo_val);
     }
 
     $i++;
@@ -273,13 +308,13 @@ $color2 = array(
 );
 
 
-$excel->getActiveSheet()->getStyle('A2:M2')->applyFromArray($color1);
-$excel->getActiveSheet()->getStyle('A1:M1')->applyFromArray($color2);
-$excel->getActiveSheet()->getStyle('A3:M'. ($i-1))->applyFromArray($estiloInformacion);
+$excel->getActiveSheet()->getStyle('A2:N2')->applyFromArray($color1);
+$excel->getActiveSheet()->getStyle('A1:N1')->applyFromArray($color2);
+$excel->getActiveSheet()->getStyle('A3:N'. ($i-1))->applyFromArray($estiloInformacion);
 
 
 
-for($j = 'A'; $j <= 'M'; $j++){
+for($j = 'A'; $j <= 'N'; $j++){
     $excel->setActiveSheetIndex(0)->getColumnDimension($j)->setWidth('20');
 }
 
@@ -298,7 +333,7 @@ $excel->setActiveSheetIndex(0);
 $excel->getActiveSheet(0)->freezePaneByColumnAndRow(0,3);
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment;filename="ordenes' . $nomorden . ' - ' . $dia . '.xlsx"');
+header('Content-Disposition: attachment;filename="ordenes' . $nomorden . ' - ' . date("m-Y", strtotime("{$dia}")) . '.xlsx"');
 header('Cache-Control: max-age=0');
 
 $objWriter = PHPExcel_IOFactory::createWriter($excel, 'Excel2007');

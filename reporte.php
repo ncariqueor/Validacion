@@ -33,7 +33,10 @@
             function asignar(){
                 var month = document.getElementById("mes").value;
                 var year = document.getElementById("anio").value;
+
                 document.getElementById("exportar").href = "exportar.php?mes="+month+"&anio="+year;
+
+                document.getElementById("exportar2").href = "ordenes.php?dia="+year+month+"&tipo=todos&estanter=5";
             }
         </script>
 
@@ -44,8 +47,8 @@
                         <div class="col-md-12"><h3 class="text-center"><a href="http://10.95.17.114/paneles"><img src="paris.png" width="140px" height="100px" title="Reportes Paris"></a> Performance Validación </h3></div>
                     </div><br>
                     <form action="reporte.php" method="post" class="row">
-                        <div class="col-lg-4"><h5>Ultima actualizacion hoy, a las <?php echo hora();?> horas</h5></div>
-                        <div class="col-lg-8">
+                        <div class="col-lg-3"><h5>Ultima actualizacion hoy, a las <?php echo hora();?> horas</h5></div>
+                        <div class="col-lg-7">
                             <select name="mes" id="mes" class="selectpicker" title="Mes" onchange="asignar();" data-style="btn btn-default btn-sm">
                                     <?php
                                     if(isset($_POST['mes'])){
@@ -337,7 +340,9 @@
 
                             <a id="exportar" class="btn btn-success btn-sm" href="#">Exportar <img src="excel.png" width="15px" height="15px"></a>
 
-                            <a class="btn btn-default btn-sm" href="query.php" style="margin-left: 300px;">Query Validaciones <img id="txt" src="images.png"></a>
+                            <a id="exportar2" class="btn btn-success btn-sm" href="#">Exportar Total Mes <img src="excel.png" width="15px" height="15px"></a>
+
+                            <a class="btn btn-default btn-sm" href="query.php" style="margin-left: 100px;">Query<img id="txt" src="images.png"></a>
                         </div>
                     </form>
                 </div>

@@ -3,9 +3,9 @@ echo "Actualizacion del año. ";
 
 date_default_timezone_set("America/Santiago");
 
-$mesAnt = 20160513; //origen de los tiempos
+$mesAnt = date("Ymd", strtotime("-1 year")); //origen de los tiempos
 
-$mesAct = 20150101;          //1 semana en el pasado
+$mesAct = date("Ymd", strtotime("-4 month -1 day"));          //1 semana en el pasado
 
 $hora = date("His"); $fecha = date("Ymd");
 
